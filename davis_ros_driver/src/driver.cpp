@@ -2,6 +2,7 @@
 
 #include "davis_ros_driver/driver.h"
 #include "davis_ros_driver/driver_utils.h"
+#include <vector>
 #include <std_msgs/Int32.h>
 
 //DAVIS Bias types
@@ -52,6 +53,7 @@ DavisRosDriver::DavisRosDriver(ros::NodeHandle & nh, ros::NodeHandle nh_private)
     ns = "/dvs";
 
   event_array_pub_ = nh_.advertise<dvs_msgs::EventArray>(ns + "/events", 10);
+  event_array_flattened_pub_ = nh_.advertise<dvs_msgs::EventArrayFlattened>(ns + "/events_flattened", 10);
   camera_info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>(ns + "/camera_info", 1);
   imu_pub_ = nh_.advertise<sensor_msgs::Imu>(ns + "/imu", 10);
   image_pub_ = nh_.advertise<sensor_msgs::Image>(ns + "/image_raw", 1);
@@ -636,6 +638,7 @@ void DavisRosDriver::readout()
     boost::posix_time::ptime next_send_time = boost::posix_time::microsec_clock::local_time();
 
     dvs_msgs::EventArrayPtr event_array_msg;
+    dvs_msgs::EventArrayFlattenedPtr event_array_flattened_msg;
 
     while (running_)
     {
@@ -665,8 +668,12 @@ void DavisRosDriver::readout()
                     if (!event_array_msg)
                     {
                         event_array_msg = dvs_msgs::EventArrayPtr(new dvs_msgs::EventArray());
+                        event_array_flattened_msg =  dvs_msgs::EventArrayFlattenedPtr(new dvs_msgs::EventArrayFlattened());
                         event_array_msg->height = davis_info_.dvsSizeY;
                         event_array_msg->width = davis_info_.dvsSizeX;
+
+                        event_array_flattened_msg->height = davis_info_.dvsSizeY;
+                        event_array_flattened_msg->width = davis_info_.dvsSizeX;
                     }
 
                     caerPolarityEventPacket polarity = (caerPolarityEventPacket) packetHeader;
@@ -687,7 +694,12 @@ void DavisRosDriver::readout()
                         if(j == 0)
                         {
                             event_array_msg->header.stamp = e.ts;
+                            event_array_flattened_msg->header.stamp = e.ts;
                         }
+                        event_array_flattened_msg->events.push_back((double) e.x);
+                        event_array_flattened_msg->events.push_back((double) e.y);
+                        event_array_flattened_msg->events.push_back((double) e.ts.toSec());
+                        event_array_flattened_msg->events.push_back(static_cast<float>(e.polarity));
 
                         event_array_msg->events.push_back(e);
                     }
@@ -699,6 +711,7 @@ void DavisRosDriver::readout()
                             )
                     {
                         event_array_pub_.publish(event_array_msg);
+                        event_array_flattened_pub_.publish(event_array_flattened_msg);
 
                         if (current_config_.streaming_rate > 0)
                         {
@@ -710,6 +723,7 @@ void DavisRosDriver::readout()
                         }
 
                         event_array_msg.reset();
+                        event_array_flattened_msg.reset();
                     }
 
                     if (camera_info_manager_->isCalibrated())
