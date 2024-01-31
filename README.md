@@ -1,3 +1,5 @@
+** This fork modifies the davis driver code in order to send the data from the camera in packets of data directly readable by python. In addition to sending `EventArray` messages, it sends `EventArrayFlattened`messages containing a field `events`, a vector containing all the events of the packet flattened being the order {x, y, t, p}) ** 
+
 rpg_dvs_ros
 ===========
 
