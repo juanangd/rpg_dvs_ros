@@ -58,7 +58,7 @@ NOTE: substitute any mention of kinetic in the following instruction with the na
 
 6. Clone this repository:
 *   `$ cd ~/catkin_ws/src`
-*   `$ git clone https://github.com/uzh-rpg/rpg_dvs_ros.git`
+*   `$ git clone https://github.com/juanangd/rpg_dvs_ros.git`
 
 7. Build the packages:
 * `$ catkin build dvs_ros_driver`  (if you are using the DVS128)
